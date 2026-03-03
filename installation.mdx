@@ -1,0 +1,170 @@
+---
+title: Installation
+description: Install graphviz and the recursion-visualiser Python package
+---
+
+## Prerequisites
+
+Recursion Tree Visualiser has two main dependencies:
+
+1. **Graphviz** - A system-level graph visualization library
+2. **Python packages** - `pydot` and `imageio` (installed automatically)
+
+You must install Graphviz first before installing the Python package.
+
+## Install graphviz
+
+<Steps>
+  <Step title="Install graphviz for your platform">
+    
+    <Tabs>
+      <Tab title="Ubuntu/Debian">
+        ```bash
+        sudo apt install graphviz
+        ```
+      </Tab>
+      
+      <Tab title="Windows">
+        1. Download the [graphviz binary](https://www2.graphviz.org/Packages/stable/windows/10/msbuild/Release/Win32/)
+        2. Run the installer
+        3. Add graphviz bin directory to your system PATH
+        
+        Alternatively, add it programmatically in your script:
+        
+        ```python
+        import os
+        # Set it to bin folder of graphviz
+        os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
+        ```
+        
+        <Note>
+          Make sure to update the path to match your actual installation directory.
+        </Note>
+      </Tab>
+      
+      <Tab title="macOS">
+        ```bash
+        brew install graphviz
+        ```
+      </Tab>
+      
+      <Tab title="Other Linux">
+        See the [official Graphviz download page](https://www.graphviz.org/download/#linux) for installation instructions for other Linux distributions.
+      </Tab>
+    </Tabs>
+    
+  </Step>
+  
+  <Step title="Verify graphviz installation">
+    Test that graphviz is correctly installed and in your PATH:
+    
+    ```bash
+    dot -V
+    ```
+    
+    You should see output like:
+    ```
+    dot - graphviz version 2.43.0 (0)
+    ```
+  </Step>
+</Steps>
+
+## Install recursion-visualiser
+
+<Steps>
+  <Step title="Install from PyPI">
+    The easiest way to install the package is from PyPI:
+    
+    ```bash
+    pip install recursion-visualiser
+    ```
+    
+    This will automatically install the required Python dependencies:
+    - `pydot` - Python interface to Graphviz's Dot language
+    - `imageio` - Library for reading and writing image data (used for GIF creation)
+  </Step>
+  
+  <Step title="Verify installation">
+    Test that the package is correctly installed:
+    
+    ```python
+    from visualiser.visualiser import Visualiser as vs
+    print("Installation successful!")
+    ```
+  </Step>
+</Steps>
+
+## Alternative installation methods
+
+### Install from source
+
+If you want to use the latest development version or contribute to the project:
+
+```bash
+git clone https://github.com/Bishalsarang/Recursion-Tree-Visualizer.git
+cd Recursion-Tree-Visualizer
+pip install -r requirements.txt
+```
+
+### Docker installation
+
+If you have Docker and docker-compose installed, you can run recursion-visualiser in a containerized environment:
+
+<Steps>
+  <Step title="Download Docker files">
+    ```bash
+    curl https://raw.githubusercontent.com/Bishalsarang/Recursion-Tree-Visualizer/master/Dockerfile --output Dockerfile
+    curl https://raw.githubusercontent.com/Bishalsarang/Recursion-Tree-Visualizer/master/docker-compose.yml --output docker-compose.yml
+    ```
+  </Step>
+  
+  <Step title="Start Docker container">
+    ```bash
+    CURRENT_UID=$(id -u):$(id -g) docker-compose up
+    ```
+  </Step>
+  
+  <Step title="Run Python scripts">
+    ```bash
+    docker-compose exec vs python fibonacci.py
+    ```
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="graphviz not found in PATH">
+    If you get an error about graphviz not being found, make sure you've added the graphviz bin directory to your system PATH.
+    
+    On Windows, you can add it programmatically:
+    ```python
+    import os
+    os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
+    ```
+  </Accordion>
+  
+  <Accordion title="Module 'visualiser' not found">
+    If you get an import error, verify that:
+    1. You've installed the package: `pip install recursion-visualiser`
+    2. You're using the correct Python environment
+    3. The package was installed successfully: `pip show recursion-visualiser`
+  </Accordion>
+  
+  <Accordion title="GIF creation fails">
+    If GIF generation fails, ensure:
+    1. The `imageio` package is installed: `pip install imageio`
+    2. You have write permissions in the output directory
+    3. The frames directory can be created
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<Card
+  title="Quickstart"
+  icon="rocket"
+  href="/quickstart"
+>
+  Create your first recursion tree visualization
+</Card>

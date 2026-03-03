@@ -1,0 +1,262 @@
+---
+title: Configuration parameters
+description: Customize the appearance and behavior of recursion tree visualizations
+---
+
+## Overview
+
+The `Visualiser` decorator accepts four configuration parameters that control what information is displayed in the recursion tree and how nodes are styled. All parameters are optional and have sensible defaults.
+
+## Parameters
+
+### ignore_args
+
+<ParamField path="ignore_args" type="list" default="None">
+  List of argument names to exclude from node labels in the visualization.
+</ParamField>
+
+**Type:** `list` or `None`
+
+**Default:** `None` (internally becomes `['node_num']`)
+
+**Behavior:**
+- When `None`, only the internal `node_num` argument is ignored
+- When a list is provided, those argument names are added to the ignore list alongside `node_num`
+- Ignored arguments are excluded from the label displayed on each node, but are still passed to the function
+
+**Implementation:** (visualiser/visualiser.py:28-32)
+
+```python
+if ignore_args is None:
+    self.ignore_args = ['node_num']
+else:
+    self.ignore_args = ['node_num'] + ignore_args
+```
+
+**Example:**
+
+```python
+@vs(ignore_args=['cache', 'memo'])
+def fibonacci(n, cache, memo):
+    # Only 'n' will appear in the node labels
+    # 'cache' and 'memo' will be hidden from visualization
+    pass
+```
+
+**Use cases:**
+- Hide internal implementation details (e.g., memoization caches)
+- Reduce visual clutter by hiding auxiliary parameters
+- Focus on the core recursive parameter
+
+---
+
+### show_argument_name
+
+<ParamField path="show_argument_name" type="bool" default="True">
+  Controls whether argument names are displayed alongside their values in node labels.
+</ParamField>
+
+**Type:** `bool`
+
+**Default:** `True`
+
+**Behavior:**
+- When `True`: displays arguments as `key=value` pairs (e.g., `fib(n=5)`)
+- When `False`: displays only the values (e.g., `fib(5)`)
+
+**Implementation:** (visualiser/visualiser.py:137-140)
+
+```python
+if not self.show_argument_name:
+    strings_list.append(f"{repr(value)}")
+else:
+    strings_list.append(f"{key}={repr(value)}")
+```
+
+**Example:**
+
+```python
+# With argument names (default)
+@vs(show_argument_name=True)
+def factorial(n):
+    # Nodes display as: factorial(n=5), factorial(n=4), etc.
+    pass
+
+# Without argument names
+@vs(show_argument_name=False)
+def factorial(n):
+    # Nodes display as: factorial(5), factorial(4), etc.
+    pass
+```
+
+**Use cases:**
+- Show argument names for clarity in functions with multiple parameters
+- Hide argument names for a cleaner look with single-parameter functions
+- Match preferred function call syntax style
+
+---
+
+### show_return_value
+
+<ParamField path="show_return_value" type="bool" default="True">
+  Controls whether the return value of each function call is displayed in the node.
+</ParamField>
+
+**Type:** `bool`
+
+**Default:** `True`
+
+**Behavior:**
+- When `True`: appends the return value to the node label with `=> {result}` format
+- When `False`: shows only the function call signature without the result
+- Special handling for `"record"` shaped nodes: separates return value by a row delimiter (`|`) instead of a newline
+
+**Implementation:** (visualiser/visualiser.py:246-254)
+
+```python
+if self.show_return_value:
+    # If shape is set to record
+    # Then separate function label and return value by a row
+    if "record" in self.node_properties_kwargs.values():
+        function_label = "{" + function_label + f"|{result} }}"
+    else:
+        function_label += f"\n => {result}"
+```
+
+**Example:**
+
+```python
+# With return values (default)
+@vs(show_return_value=True)
+def fibonacci(n):
+    # Nodes display as:
+    # fibonacci(n=5)
+    #  => 5
+    pass
+
+# Without return values
+@vs(show_return_value=False)
+def fibonacci(n):
+    # Nodes display as: fibonacci(n=5)
+    pass
+```
+
+**Use cases:**
+- Trace the computed values through the recursion tree
+- Verify correctness of recursive calculations
+- Hide return values to reduce visual complexity
+
+<Note>
+  The return value display format automatically adapts when using the `"record"` shape, using graphviz's row separator syntax for cleaner presentation.
+</Note>
+
+---
+
+### node_properties_kwargs
+
+<ParamField path="node_properties_kwargs" type="dict" default="{}">
+  Dictionary of graphviz node properties to customize the visual appearance of nodes.
+</ParamField>
+
+**Type:** `dict`
+
+**Default:** `{}`
+
+**Behavior:**
+- Accepts any valid graphviz node attributes as key-value pairs
+- Properties are applied to all nodes in the recursion tree
+- Values are inserted into the DOT language graph definition
+
+**Implementation:** (visualiser/visualiser.py:233-236)
+
+```python
+if self.node_properties_kwargs:
+    node_string += ", " + \
+        ", ".join([f'{key}="{value}"' for key,
+                   value in self.node_properties_kwargs.items()])
+```
+
+**Common properties:**
+
+| Property | Description | Example Values |
+|----------|-------------|----------------|
+| `shape` | Node shape | `"record"`, `"box"`, `"ellipse"`, `"circle"`, `"diamond"` |
+| `color` | Border color | `"#f57542"`, `"red"`, `"blue"` |
+| `style` | Node style | `"filled"`, `"solid"`, `"dashed"`, `"dotted"`, `"bold"` |
+| `fillcolor` | Fill color (requires `style="filled"`) | `"grey"`, `"#fff3af"`, `"lightblue"` |
+| `fontname` | Font family | `"Arial"`, `"Helvetica"`, `"Courier"` |
+| `fontsize` | Font size in points | `"12"`, `"14"`, `"16"` |
+| `fontcolor` | Text color | `"black"`, `"white"`, `"#333333"` |
+
+**Example:**
+
+```python
+@vs(node_properties_kwargs={
+    "shape": "record",
+    "color": "#f57542",
+    "style": "filled",
+    "fillcolor": "grey"
+})
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n=n - 1) + fibonacci(n=n - 2)
+```
+
+**Advanced styling:**
+
+```python
+@vs(node_properties_kwargs={
+    "shape": "box",
+    "style": "filled,rounded",
+    "fillcolor": "lightblue",
+    "fontname": "Courier",
+    "fontsize": "14",
+    "color": "darkblue"
+})
+def custom_recursion(n):
+    pass
+```
+
+<Warning>
+  All property values must be strings. The library does not perform type conversion, so numeric values like font sizes should be passed as strings (e.g., `"14"` not `14`).
+</Warning>
+
+<Note>
+  For a complete list of supported graphviz node attributes, refer to the [graphviz node attribute documentation](https://graphviz.org/doc/info/attrs.html).
+</Note>
+
+## Configuration examples
+
+### Minimal visualization
+
+```python
+@vs(show_argument_name=False, show_return_value=False)
+def simple_fib(n):
+    # Clean, minimal node labels showing only function calls
+    pass
+```
+
+### Record-style nodes
+
+```python
+@vs(
+    show_return_value=True,
+    node_properties_kwargs={"shape": "record"}
+)
+def structured_display(n):
+    # Return values appear in a separate row within the node
+    pass
+```
+
+### Hiding auxiliary parameters
+
+```python
+@vs(
+    ignore_args=['depth', 'visited'],
+    show_argument_name=True
+)
+def graph_traversal(node, depth, visited):
+    # Only 'node' appears in labels; 'depth' and 'visited' are hidden
+    pass
+```

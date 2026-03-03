@@ -1,0 +1,66 @@
+---
+title: Fibonacci sequence
+description: Visualize the recursive Fibonacci sequence computation
+---
+
+The Fibonacci sequence is a classic example for understanding recursion and visualizing its tree structure. Each number is the sum of the two preceding ones, creating a binary tree of recursive calls.
+
+## Example code
+
+This example demonstrates how the Fibonacci function creates a branching recursion tree:
+
+```python
+# Author: Bishal Sarang
+
+# Import Visualiser class from module visualiser
+from visualiser.visualiser import Visualiser as vs
+
+# Add decorator
+# Decorator accepts optional arguments: ignore_args , show_argument_name, show_return_value and node_properties_kwargs
+@vs(node_properties_kwargs={"shape":"record", "color":"#f57542", "style":"filled", "fillcolor":"grey"})
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n=n - 1) + fib(n=n - 2)
+
+
+def main():
+    # Call function
+    print(fib(n=6))
+    # Save recursion tree to a file
+    vs.make_animation("fibonacci.gif", delay=2)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## How it works
+
+The recursive Fibonacci function:
+1. **Base case**: Returns `n` when `n <= 1`
+2. **Recursive case**: Returns `fib(n-1) + fib(n-2)`, creating two branches at each level
+3. Each call spawns two child calls until reaching the base case
+
+<Note>
+This example demonstrates overlapping subproblems - notice how `fib(4)`, `fib(3)`, `fib(2)`, etc. are calculated multiple times in the recursion tree.
+</Note>
+
+## Decorator configuration
+
+The `@vs` decorator is configured with custom node styling:
+
+- `shape="record"`: Uses a record-based node shape
+- `color="#f57542"`: Sets the border color to orange
+- `style="filled"`: Enables filled nodes
+- `fillcolor="grey"`: Sets the fill color to grey
+
+## Output
+
+Running this code with `fib(6)` generates:
+- **Console output**: `8` (the 6th Fibonacci number)
+- **Animation file**: `fibonacci.gif` showing the complete recursion tree with a 2-second delay between frames
+
+<Tip>
+Try experimenting with different values of `n` to see how the tree grows exponentially. Even `fib(10)` creates a significantly larger tree than `fib(6)`.
+</Tip>

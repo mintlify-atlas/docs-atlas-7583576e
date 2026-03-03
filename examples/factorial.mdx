@@ -1,0 +1,65 @@
+---
+title: Factorial
+description: Visualize the recursive factorial computation
+---
+
+The factorial function is one of the simplest recursive algorithms, creating a linear recursion tree. This example shows how each recursive call reduces the problem by one until reaching the base case.
+
+## Example code
+
+This example demonstrates a straightforward recursive factorial implementation:
+
+```python
+# Author: Bishal Sarang
+
+# Import Visualiser class from module visualiser
+from visualiser.visualiser import Visualiser as vs
+
+# Add decorator
+# Decorator accepts optional arguments: ignore_args , show_argument_name, show_return_value and node_properties_kwargs
+@vs()
+def fact(n):
+    if n <= 1:
+        return n
+    return n * fact(n=n-1)
+
+
+def main():
+    # Call function
+    print(fact(n=6))
+    # Save recursion tree to a file
+    vs.make_animation("factorial.gif", delay=2)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## How it works
+
+The recursive factorial function:
+1. **Base case**: Returns `n` when `n <= 1`
+2. **Recursive case**: Returns `n * fact(n-1)`, creating a single recursive call
+3. The recursion continues linearly until reaching `n = 1`
+
+<Note>
+Unlike Fibonacci, the factorial function creates a linear recursion tree (a single path) rather than a branching tree. This makes it easier to understand the call stack behavior.
+</Note>
+
+## Decorator configuration
+
+This example uses the `@vs()` decorator with default settings, which:
+- Shows all function arguments in the tree nodes
+- Displays argument names
+- Shows return values
+- Uses default node styling
+
+## Output
+
+Running this code with `fact(6)` generates:
+- **Console output**: `720` (6! = 6 × 5 × 4 × 3 × 2 × 1)
+- **Animation file**: `factorial.gif` showing the linear recursion tree with a 2-second delay between frames
+
+<Tip>
+The factorial example is perfect for understanding how the call stack works - each call must wait for the next recursive call to complete before it can perform its multiplication.
+</Tip>

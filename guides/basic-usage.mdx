@@ -1,0 +1,274 @@
+---
+title: Basic usage
+description: Learn how to use the @Visualiser decorator to visualize recursion trees
+---
+
+The Recursion Tree Visualiser uses a simple decorator pattern to automatically generate visual representations of your recursive functions. This guide covers the essential steps to get started.
+
+## Quick start
+
+<Steps>
+  <Step title="Import the Visualiser class">
+    Import the `Visualiser` class from the `visualiser.visualiser` module. The conventional alias is `vs`:
+
+    ```python
+    from visualiser.visualiser import Visualiser as vs
+    ```
+  </Step>
+
+  <Step title="Add the decorator to your function">
+    Add the `@vs()` decorator above your recursive function:
+
+    ```python
+    @vs()
+    def factorial(n):
+        if n <= 1:
+            return n
+        return n * factorial(n=n - 1)
+    ```
+
+    <Note>
+      The decorator can be called with or without parentheses: `@vs()` or `@vs`.
+    </Note>
+  </Step>
+
+  <Step title="Convert function calls to keyword arguments">
+    This is a **critical requirement**: All recursive calls within the decorated function must use keyword arguments.
+
+    ```python
+    # ❌ Incorrect - positional arguments
+    return factorial(n - 1)
+
+    # ✅ Correct - keyword arguments
+    return factorial(n=n - 1)
+    ```
+
+    <Warning>
+      The visualiser relies on keyword arguments to track function calls. Using positional arguments will cause the visualization to fail.
+    </Warning>
+  </Step>
+
+  <Step title="Generate the visualization">
+    After calling your function, use one of the class methods to save the output:
+
+    ```python
+    def main():
+        result = factorial(n=5)
+        print(result)
+        
+        # Save as static image
+        vs.write_image("factorial.png")
+
+    if __name__ == "__main__":
+        main()
+    ```
+  </Step>
+</Steps>
+
+## Complete example
+
+Here's a complete example visualizing the Fibonacci sequence:
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs()
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n=n - 1) + fib(n=n - 2)
+
+def main():
+    print(fib(n=6))
+    vs.write_image("fibonacci.png")
+
+if __name__ == "__main__":
+    main()
+```
+
+This generates a recursion tree showing all function calls made during the computation of `fib(6)`.
+
+## Decorator initialization
+
+The `Visualiser` class accepts several optional parameters when used as a decorator:
+
+```python
+@vs(
+    ignore_args=None,
+    show_argument_name=True,
+    show_return_value=True,
+    node_properties_kwargs={}
+)
+```
+
+### Parameters
+
+<ParamField path="ignore_args" type="list" default="None">
+  List of argument names to exclude from node labels. By default, only the internal `node_num` tracker is ignored.
+
+  ```python
+  @vs(ignore_args=["coins"])
+  def coin_change(coins, amount, n):
+      # The 'coins' parameter won't appear in node labels
+      pass
+  ```
+</ParamField>
+
+<ParamField path="show_argument_name" type="bool" default="True">
+  Whether to display argument names in node labels.
+
+  ```python
+  # With show_argument_name=True (default)
+  # Node label: fib(n=5)
+  
+  # With show_argument_name=False
+  # Node label: fib(5)
+  @vs(show_argument_name=False)
+  def fib(n):
+      pass
+  ```
+</ParamField>
+
+<ParamField path="show_return_value" type="bool" default="True">
+  Whether to display the return value on each node.
+
+  ```python
+  @vs(show_return_value=True)
+  def fib(n):
+      if n <= 1:
+          return n
+      return fib(n=n - 1) + fib(n=n - 2)
+  # Node will show: fib(n=5) => 5
+  ```
+</ParamField>
+
+<ParamField path="node_properties_kwargs" type="dict" default="{}">
+  Dictionary of Graphviz node properties for customizing appearance. See the [customization guide](/guides/customization) for details.
+</ParamField>
+
+## Function signature requirements
+
+For the visualiser to work correctly, your recursive function must follow these requirements:
+
+### Use keyword arguments in recursive calls
+
+All recursive calls must pass arguments as keyword arguments:
+
+```python
+@vs()
+def factorial(n):
+    if n <= 1:
+        return 1
+    # Use n=n-1, not just n-1
+    return n * factorial(n=n - 1)
+```
+
+### Multiple parameters
+
+When your function has multiple parameters, all recursive calls must use keyword arguments:
+
+```python
+@vs()
+def gcd(a, b):
+    if b == 0:
+        return a
+    # Both parameters must be keyword arguments
+    return gcd(a=b, b=a % b)
+```
+
+### Complex recursive patterns
+
+The visualiser works with complex recursion patterns including multiple recursive calls:
+
+```python
+@vs()
+def fib(n):
+    if n <= 1:
+        return n
+    # Multiple recursive calls in one expression
+    return fib(n=n - 1) + fib(n=n - 2)
+```
+
+## Calling the decorated function
+
+When calling the decorated function from your main code, you can use either positional or keyword arguments:
+
+```python
+@vs()
+def factorial(n):
+    if n <= 1:
+        return 1
+    return n * factorial(n=n - 1)
+
+# Both calling styles work from outside:
+factorial(5)      # ✅ Positional argument
+factorial(n=5)    # ✅ Keyword argument
+```
+
+<Info>
+  The keyword argument requirement only applies to recursive calls **within** the decorated function, not to calls from external code.
+</Info>
+
+## Output methods
+
+After your recursive function completes, use these class methods to save the visualization:
+
+### Static image
+
+```python
+vs.write_image("output.png")
+```
+
+Generates a static PNG image of the complete recursion tree.
+
+### Animation
+
+```python
+vs.make_animation("output.gif", delay=3)
+```
+
+Generates both a static PNG and an animated GIF showing the recursion tree being built step by step. See the [animation guide](/guides/animation) for details.
+
+## Common patterns
+
+### Binary recursion (divide and conquer)
+
+```python
+@vs()
+def merge_sort_size(arr, left, right):
+    if left >= right:
+        return
+    mid = (left + right) // 2
+    merge_sort_size(arr=arr, left=left, right=mid)
+    merge_sort_size(arr=arr, left=mid + 1, right=right)
+```
+
+### Multiple parameters with filtering
+
+```python
+@vs(ignore_args=["coins"], show_argument_name=False)
+def coin_change(coins, amount, n):
+    if amount == 0:
+        return 1
+    if amount < 0 or n <= 0:
+        return 0
+    
+    include = coin_change(coins=coins, amount=amount - coins[n-1], n=n)
+    exclude = coin_change(coins=coins, amount=amount, n=n - 1)
+    return include + exclude
+```
+
+### String manipulation recursion
+
+```python
+@vs(show_argument_name=False)
+def combinations(prefix, s):
+    if len(s) == 0:
+        return prefix
+    combinations(prefix=prefix + s[0], s=s[1:])
+    combinations(prefix=prefix, s=s[1:])
+```
+
+<Tip>
+  Start with the default decorator settings (`@vs()`) and add customization options as needed.
+</Tip>

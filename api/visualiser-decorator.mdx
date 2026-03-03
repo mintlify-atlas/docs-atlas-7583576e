@@ -1,0 +1,136 @@
+---
+title: Visualiser decorator
+description: The main decorator class for visualizing recursion trees
+---
+
+## Overview
+
+The `Visualiser` class is the core decorator that intercepts recursive function calls and builds a visual tree representation. When applied to a recursive function, it automatically tracks each function call, captures arguments and return values, and generates a graph structure that can be exported as images or animations.
+
+## Class signature
+
+```python
+class Visualiser(object):
+    def __init__(self, ignore_args=None, show_argument_name=True,
+                 show_return_value=True, node_properties_kwargs={})
+```
+
+Source: visualiser/visualiser.py:18-19
+
+## Parameters
+
+<ParamField path="ignore_args" type="list" default="None">
+  List of argument names to exclude from the node labels in the visualization. By default, the internal `node_num` argument is always ignored. Any additional argument names provided will be appended to this list.
+  
+  **Default behavior:** `['node_num']`
+</ParamField>
+
+<ParamField path="show_argument_name" type="bool" default="True">
+  Controls whether argument names are displayed alongside their values in node labels.
+  
+  - When `True`: displays as `key=value` (e.g., `n=5`)
+  - When `False`: displays only values (e.g., `5`)
+</ParamField>
+
+<ParamField path="show_return_value" type="bool" default="True">
+  Controls whether the return value of each function call is displayed in the node.
+  
+  - When `True`: appends `=> {result}` to the node label
+  - When `False`: shows only the function call signature
+  
+  **Note:** If the node shape is set to `"record"` via `node_properties_kwargs`, the return value is separated by a row delimiter instead of a newline.
+</ParamField>
+
+<ParamField path="node_properties_kwargs" type="dict" default="{}">
+  Dictionary of graphviz node properties to customize the visual appearance of nodes in the recursion tree. Accepts any valid graphviz node attributes.
+  
+  Common properties include:
+  - `shape`: Node shape (e.g., `"record"`, `"box"`, `"ellipse"`)
+  - `color`: Border color
+  - `style`: Node style (e.g., `"filled"`, `"solid"`, `"dashed"`)
+  - `fillcolor`: Fill color when style is `"filled"`
+</ParamField>
+
+## Usage as a decorator
+
+The `Visualiser` class is designed to be used as a Python decorator. Apply it to any recursive function to automatically visualize its execution tree.
+
+### Basic usage
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs()
+def factorial(n):
+    if n <= 1:
+        return n
+    return n * factorial(n=n-1)
+
+factorial(n=6)
+vs.make_animation("factorial.gif", delay=2)
+```
+
+### With custom configuration
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs(
+    show_argument_name=True,
+    show_return_value=True,
+    node_properties_kwargs={
+        "shape": "record",
+        "color": "#f57542",
+        "style": "filled",
+        "fillcolor": "grey"
+    }
+)
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n=n - 1) + fib(n=n - 2)
+
+fib(n=6)
+vs.make_animation("fibonacci.gif", delay=2)
+```
+
+### Ignoring specific arguments
+
+```python
+@vs(ignore_args=['cache', 'depth'])
+def recursive_func(n, cache, depth):
+    # Only 'n' will be shown in the visualization
+    # 'cache' and 'depth' will be hidden
+    pass
+```
+
+## How it works
+
+The `__call__` method (visualiser/visualiser.py:153-271) implements the decorator logic:
+
+1. **Call interception**: Wraps the decorated function using `functools.wraps`
+2. **Node tracking**: Assigns a unique `node_num` to each function call
+3. **Argument extraction**: Captures function arguments and formats them according to configuration
+4. **Parent tracking**: Uses Python's stack frames to identify caller functions and build edges
+5. **Graph construction**: Creates nodes and edges using the pydot library
+6. **Return value capture**: Intercepts the function's return value and optionally displays it
+
+<Note>
+  The decorator adds a hidden `node_num` keyword argument to uniquely identify each node in the recursion tree. This argument is automatically removed before the actual function call.
+</Note>
+
+<Warning>
+  The Visualiser uses `sys._getframe()` to inspect the call stack. This is a CPython implementation detail and may not work on all Python interpreters.
+</Warning>
+
+## Class attributes
+
+The following class-level attributes are initialized by `init_graph()` and shared across all instances:
+
+- `node_count`: Counter for total number of function calls
+- `graph`: pydot.Dot graph object with `bgcolor="#fff3af"`
+- `stack`: List tracking the call stack for building parent-child relationships
+- `edges`: List of edge strings in DOT format
+- `nodes`: List of node strings in DOT format
+
+Source: visualiser/visualiser.py:274-281

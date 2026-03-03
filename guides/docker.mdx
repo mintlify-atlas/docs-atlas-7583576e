@@ -1,0 +1,407 @@
+---
+title: Docker
+description: Using Docker for installation and running the Recursion Tree Visualiser
+---
+
+If you have Docker installed, you can use the Recursion Tree Visualiser without manually installing Python, Graphviz, or other dependencies. This approach provides a consistent, isolated environment across different operating systems.
+
+## Prerequisites
+
+Before using the Docker installation method, ensure you have:
+
+- Docker installed ([download here](https://docs.docker.com/get-docker/))
+- Docker Compose installed (usually included with Docker Desktop)
+- Basic familiarity with command-line operations
+
+## Installation
+
+The Docker setup uses two files: a `Dockerfile` for building the image and a `docker-compose.yml` file for running the container.
+
+<Steps>
+  <Step title="Download the Dockerfile">
+    Download the Dockerfile from the repository:
+
+    ```bash
+    curl https://raw.githubusercontent.com/Bishalsarang/Recursion-Tree-Visualizer/master/Dockerfile --output Dockerfile
+    ```
+
+    The Dockerfile contains:
+    ```dockerfile
+    FROM python:3.6-slim
+    RUN apt-get update
+    RUN apt-get -y install graphviz
+    ADD . /vs
+    WORKDIR /vs
+    RUN pip install recursion-visualiser
+    ```
+  </Step>
+
+  <Step title="Download the docker-compose.yml">
+    Download the docker-compose configuration:
+
+    ```bash
+    curl https://raw.githubusercontent.com/Bishalsarang/Recursion-Tree-Visualizer/master/docker-compose.yml --output docker-compose.yml
+    ```
+
+    The docker-compose.yml contains:
+    ```yaml
+    version: "3.6"
+    services:
+      vs:
+        build: .
+        container_name: recursion-visualiser-env
+        stdin_open: true
+        tty: true
+        user: ${CURRENT_UID}
+        volumes:
+          - .:/vs
+    ```
+  </Step>
+
+  <Step title="Start the Docker container">
+    Build and start the container with the following command:
+
+    ```bash
+    CURRENT_UID=$(id -u):$(id -g) docker-compose up
+    ```
+
+    This command:
+    - Sets the container user to match your current user ID (prevents permission issues)
+    - Builds the Docker image (first time only)
+    - Starts the container in the background
+  </Step>
+</Steps>
+
+<Note>
+  The first time you run `docker-compose up`, it will download the base Python image and install all dependencies. This may take a few minutes.
+</Note>
+
+## Running Python scripts
+
+Once the container is running, you can execute Python scripts inside it using `docker-compose exec`.
+
+### Basic usage
+
+```bash
+docker-compose exec vs python your_script.py
+```
+
+### Example: Running fibonacci.py
+
+<Tabs>
+  <Tab title="Create the script">
+    Create a file named `fibonacci.py` in your current directory:
+
+    ```python
+    from visualiser.visualiser import Visualiser as vs
+
+    @vs(node_properties_kwargs={
+        "shape": "record",
+        "color": "#f57542",
+        "style": "filled",
+        "fillcolor": "grey"
+    })
+    def fib(n):
+        if n <= 1:
+            return n
+        return fib(n=n - 1) + fib(n=n - 2)
+
+    def main():
+        print(fib(n=6))
+        vs.make_animation("fibonacci.gif", delay=2)
+
+    if __name__ == "__main__":
+        main()
+    ```
+  </Tab>
+
+  <Tab title="Run the script">
+    Execute the script inside the Docker container:
+
+    ```bash
+    docker-compose exec vs python fibonacci.py
+    ```
+
+    Expected output:
+    ```
+    Drawing for fib(1)
+    8
+    File fibonacci.png successfully written
+    Writing frames....
+    Writing gif...
+    Saved gif fibonacci.gif successfully
+    ```
+  </Tab>
+
+  <Tab title="View the output">
+    The generated files (`fibonacci.gif` and `fibonacci.png`) will be saved in your current directory on the host machine, thanks to the volume mount in `docker-compose.yml`.
+
+    ```bash
+    ls -l fibonacci.*
+    # fibonacci.gif
+    # fibonacci.png
+    ```
+  </Tab>
+</Tabs>
+
+## Understanding the Docker setup
+
+### The Dockerfile
+
+The Dockerfile defines the environment:
+
+```dockerfile
+FROM python:3.6-slim
+```
+Starts from a minimal Python 3.6 image.
+
+```dockerfile
+RUN apt-get update
+RUN apt-get -y install graphviz
+```
+Installs Graphviz, the only system dependency required.
+
+```dockerfile
+ADD . /vs
+WORKDIR /vs
+```
+Copies your current directory into `/vs` in the container and sets it as the working directory.
+
+```dockerfile
+RUN pip install recursion-visualiser
+```
+Installs the recursion-visualiser package from PyPI.
+
+### The docker-compose.yml
+
+The docker-compose file simplifies container management:
+
+```yaml
+services:
+  vs:
+    build: .
+```
+Builds the image from the Dockerfile in the current directory.
+
+```yaml
+    user: ${CURRENT_UID}
+```
+Runs the container as your current user, preventing file permission issues.
+
+```yaml
+    volumes:
+      - .:/vs
+```
+Mounts your current directory to `/vs` in the container, allowing the container to read your scripts and write output files.
+
+```yaml
+    stdin_open: true
+    tty: true
+```
+Keeps the container running and allows interactive use.
+
+## Common Docker commands
+
+### Start the container (if stopped)
+
+```bash
+CURRENT_UID=$(id -u):$(id -g) docker-compose up -d
+```
+
+The `-d` flag runs the container in detached mode (background).
+
+### Stop the container
+
+```bash
+docker-compose down
+```
+
+### Restart the container
+
+```bash
+docker-compose restart
+```
+
+### View container logs
+
+```bash
+docker-compose logs -f vs
+```
+
+### Access the container shell
+
+For interactive debugging or exploration:
+
+```bash
+docker-compose exec vs /bin/bash
+```
+
+Once inside, you can run Python commands directly:
+
+```bash
+python fibonacci.py
+ls -la
+# etc.
+```
+
+Exit the shell with `exit` or `Ctrl+D`.
+
+### Remove the container and image
+
+To completely remove the Docker setup:
+
+```bash
+# Stop and remove containers
+docker-compose down
+
+# Remove the image
+docker rmi recursion-visualiser-env_vs
+```
+
+## File permissions
+
+The `CURRENT_UID=$(id -u):$(id -g)` environment variable ensures that files created by the container are owned by your user, not root.
+
+<Tabs>
+  <Tab title="With CURRENT_UID (recommended)">
+    ```bash
+    CURRENT_UID=$(id -u):$(id -g) docker-compose up
+    docker-compose exec vs python fibonacci.py
+    ls -l fibonacci.gif
+    # -rw-r--r-- 1 yourusername yourgroup 12345 ... fibonacci.gif
+    ```
+    
+    Files are owned by your user account.
+  </Tab>
+
+  <Tab title="Without CURRENT_UID">
+    ```bash
+    docker-compose up  # No CURRENT_UID set
+    docker-compose exec vs python fibonacci.py
+    ls -l fibonacci.gif
+    # -rw-r--r-- 1 root root 12345 ... fibonacci.gif
+    ```
+    
+    Files are owned by root, requiring `sudo` to modify or delete.
+  </Tab>
+</Tabs>
+
+<Warning>
+  Always use `CURRENT_UID=$(id -u):$(id -g)` when starting the container to avoid permission issues with generated files.
+</Warning>
+
+## Working with examples
+
+The repository includes several example scripts. Here's how to run them using Docker:
+
+```bash
+# Clone the repository (if you haven't already)
+git clone https://github.com/Bishalsarang/Recursion-Tree-Visualizer.git
+cd Recursion-Tree-Visualizer
+
+# Start the container
+CURRENT_UID=$(id -u):$(id -g) docker-compose up -d
+
+# Run different examples
+docker-compose exec vs python examples/fibonacci.py
+docker-compose exec vs python examples/factorial.py
+docker-compose exec vs python examples/coin_change.py
+docker-compose exec vs python examples/combinations.py
+```
+
+## Advantages of Docker installation
+
+<Steps>
+  <Step title="No dependency conflicts">
+    The Docker container provides an isolated environment, preventing conflicts with other Python packages or Graphviz versions on your system.
+  </Step>
+
+  <Step title="Consistent across platforms">
+    The same Docker setup works on Linux, macOS, and Windows, eliminating platform-specific installation issues.
+  </Step>
+
+  <Step title="Easy cleanup">
+    Remove the entire environment with a single command: `docker-compose down && docker rmi recursion-visualiser-env_vs`
+  </Step>
+
+  <Step title="Reproducible environment">
+    The Dockerfile specifies exact versions, ensuring consistent behavior across different machines and times.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Permission denied errors
+
+**Problem:** Cannot read/write files, or files are owned by root.
+
+**Solution:** Always use `CURRENT_UID` when starting the container:
+
+```bash
+CURRENT_UID=$(id -u):$(id -g) docker-compose up
+```
+
+### Container not starting
+
+**Problem:** `docker-compose up` fails or exits immediately.
+
+**Solution:** Check Docker daemon is running:
+
+```bash
+docker ps  # Should list running containers
+sudo systemctl start docker  # Linux
+# or start Docker Desktop on macOS/Windows
+```
+
+### Module not found errors
+
+**Problem:** `ModuleNotFoundError: No module named 'visualiser'`
+
+**Solution:** Rebuild the container to reinstall dependencies:
+
+```bash
+docker-compose down
+docker-compose build --no-cache
+CURRENT_UID=$(id -u):$(id -g) docker-compose up
+```
+
+### Port conflicts
+
+The default setup doesn't expose any ports, but if you modify it and encounter port conflicts:
+
+```bash
+# Check what's using the port
+sudo lsof -i :PORT_NUMBER
+
+# Stop conflicting service or change port in docker-compose.yml
+```
+
+### Out of disk space
+
+**Problem:** Docker build fails due to insufficient space.
+
+**Solution:** Clean up unused Docker resources:
+
+```bash
+# Remove unused containers, networks, images
+docker system prune -a
+
+# Check disk usage
+docker system df
+```
+
+## Comparison: Docker vs. Native installation
+
+| Aspect | Docker | Native Installation |
+|--------|--------|--------------------|
+| Setup time | ~5-10 minutes (first time) | ~5-15 minutes (varies by OS) |
+| Dependencies | Only Docker required | Python, pip, Graphviz, packages |
+| Isolation | Complete isolation | Shares system Python |
+| Updates | Rebuild container | Update packages individually |
+| File access | Via volume mounts | Direct access |
+| Performance | Slight overhead | Native performance |
+| Cross-platform | Identical across platforms | Platform-specific steps |
+
+<Tip>
+  Use Docker if you want a clean, isolated environment or work across multiple machines. Use native installation if you need maximum performance or already have Python and Graphviz installed.
+</Tip>

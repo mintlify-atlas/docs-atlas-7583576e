@@ -1,0 +1,412 @@
+---
+title: Class methods
+description: Methods for generating images, animations, and managing the visualization graph
+---
+
+## Overview
+
+The `Visualiser` class provides several class methods for exporting the recursion tree to various formats. These methods are called after the recursive function has completed execution to save the generated visualization.
+
+<Note>
+  All methods documented here are class methods (decorated with `@classmethod`). They operate on class-level attributes and can be called directly on the `Visualiser` class without creating an instance.
+</Note>
+
+## Methods
+
+### init_graph
+
+```python
+@classmethod
+def init_graph(cls)
+```
+
+Initializes or resets the graph structure and tracking variables.
+
+Source: visualiser/visualiser.py:273-281
+
+**Parameters:** None
+
+**Returns:** None
+
+**Behavior:**
+
+Resets all class-level attributes to their initial state:
+
+- `node_count`: Set to `0` (tracks total number of function calls)
+- `graph`: Creates a new `pydot.Dot` object with `graph_type="digraph"` and `bgcolor="#fff3af"`
+- `stack`: Initialized to `[]` (tracks the call stack for parent-child relationships)
+- `edges`: Initialized to `[]` (stores edge definitions in DOT format)
+- `nodes`: Initialized to `[]` (stores node definitions in DOT format)
+
+**Implementation:**
+
+```python
+@classmethod
+def init_graph(cls):
+    cls.node_count = 0
+    cls.graph = pydot.Dot(graph_type="digraph", bgcolor="#fff3af")
+    cls.stack = []
+    cls.edges = []
+    cls.nodes = []
+```
+
+**Usage:**
+
+```python
+# Automatically called during __init__
+# Also called by make_animation() after generating output
+vs.init_graph()
+```
+
+**When to use:**
+- Called automatically when creating a new `Visualiser` instance
+- Called automatically at the end of `make_animation()` to clean up
+- Manually call to reset the graph between different function visualizations
+
+<Warning>
+  Calling `init_graph()` clears all accumulated graph data. Only use this when you want to start a fresh visualization.
+</Warning>
+
+---
+
+### write_image
+
+```python
+@classmethod
+def write_image(cls, filename="out.png")
+```
+
+Exports the current recursion tree as a PNG image file.
+
+Source: visualiser/visualiser.py:34-40
+
+**Parameters:**
+
+<ParamField path="filename" type="str" default="out.png">
+  The output filename for the PNG image. Include the `.png` extension.
+</ParamField>
+
+**Returns:** None
+
+**Side effects:**
+- Writes a PNG file to the specified filename
+- Prints success or failure message to stdout
+
+**Implementation:**
+
+```python
+@classmethod
+def write_image(cls, filename="out.png"):
+    try:
+        cls.graph.write_png(f"{filename}")
+        print(f"File {filename} successfully written")
+    except Exception:
+        print(f"Writing {filename} failed")
+```
+
+**Usage:**
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs()
+def factorial(n):
+    if n <= 1:
+        return n
+    return n * factorial(n=n-1)
+
+factorial(n=5)
+vs.write_image("factorial_tree.png")
+```
+
+**Output:**
+```
+File factorial_tree.png successfully written
+```
+
+<Note>
+  The method uses pydot's `write_png()` function, which requires graphviz to be installed on the system.
+</Note>
+
+---
+
+### make_frames
+
+```python
+@classmethod
+def make_frames(cls)
+```
+
+Generates individual PNG frames showing the step-by-step construction of the recursion tree.
+
+Source: visualiser/visualiser.py:42-69
+
+**Parameters:** None
+
+**Returns:** None
+
+**Side effects:**
+- Creates a `frames/` directory if it doesn't exist
+- Writes numbered PNG files (`temp_0.png`, `temp_1.png`, etc.) to the `frames/` directory
+- Prints progress message to stdout
+
+**Behavior:**
+
+For each edge in the recursion tree:
+1. Creates a snapshot of the graph with nodes and edges up to that point visible
+2. Makes subsequent nodes and edges invisible using the `style=invis` graphviz attribute
+3. Renders the frame as a PNG image
+
+**Implementation details:**
+
+```python
+# Creates frames directory
+if not os.path.exists("frames"):
+    os.makedirs("frames")
+
+# For each step, shows nodes/edges up to index i
+# Hides remaining nodes/edges with style=invis
+for i in range(len(Edges)):
+    # ... frame generation logic ...
+    g[0].write_png(f"frames/temp_{i}.png")
+```
+
+**Usage:**
+
+```python
+vs.make_frames()
+# Creates: frames/temp_0.png, frames/temp_1.png, ...
+```
+
+**Output:**
+```
+Writing frames....
+```
+
+<Note>
+  This method is typically called internally by `make_animation()` and not directly by users. The frames are temporary files used to construct the final GIF animation.
+</Note>
+
+---
+
+### write_gif
+
+```python
+@classmethod
+def write_gif(cls, name="out.gif", delay=3)
+```
+
+Compiles individual frames into an animated GIF file.
+
+Source: visualiser/visualiser.py:71-88
+
+**Parameters:**
+
+<ParamField path="name" type="str" default="out.gif">
+  The output filename for the GIF animation. Include the `.gif` extension.
+</ParamField>
+
+<ParamField path="delay" type="int" default="3">
+  Frame rate in frames per second (fps). Higher values create faster animations.
+</ParamField>
+
+**Returns:** None
+
+**Side effects:**
+- Reads all PNG files from the `frames/` directory
+- Writes an animated GIF to the specified filename
+- Deletes the `frames/` directory and all frame images
+- Prints progress messages to stdout
+
+**Implementation:**
+
+```python
+@classmethod
+def write_gif(cls, name="out.gif", delay=3):
+    images = []
+    
+    # Sort frames in ascending order by number
+    sorted_images = sorted(
+        glob.glob("frames/*.png"),
+        key=lambda fn: int(fn.split("_")[1].split(".")[0])
+    )
+    
+    for filename in sorted_images:
+        images.append(imageio.imread(filename))
+    
+    print("Writing gif...")
+    imageio.mimsave(name, images, fps=delay)
+    print(f"Saved gif {name} successfully")
+    
+    # Clean up temporary frames
+    shutil.rmtree("frames")
+```
+
+**Usage:**
+
+```python
+vs.make_frames()  # Must be called first
+vs.write_gif("animation.gif", delay=2)
+```
+
+**Output:**
+```
+Writing gif...
+Saved gif animation.gif successfully
+```
+
+<Warning>
+  This method deletes the `frames/` directory after creating the GIF. Ensure you have called `make_frames()` before calling this method, otherwise it will fail.
+</Warning>
+
+---
+
+### make_animation
+
+```python
+@classmethod
+def make_animation(cls, filename="out.gif", delay=3)
+```
+
+Complete workflow to generate both a static PNG image and an animated GIF of the recursion tree.
+
+Source: visualiser/visualiser.py:90-110
+
+**Parameters:**
+
+<ParamField path="filename" type="str" default="out.gif">
+  The output filename for the GIF animation. A PNG with the same base name will also be created (e.g., `"output.gif"` creates `"output.png"` and `"output.gif"`).
+</ParamField>
+
+<ParamField path="delay" type="int" default="3">
+  Frame rate in frames per second for the animation. Higher values create faster playback.
+</ParamField>
+
+**Returns:** None
+
+**Side effects:**
+- Writes a PNG image of the complete recursion tree
+- Writes an animated GIF showing the tree construction
+- Cleans up temporary frame files
+- Resets the graph by calling `init_graph()`
+- Prints progress and error messages to stdout
+
+**Behavior:**
+
+This method orchestrates the complete animation workflow:
+
+1. Saves the final tree as a PNG image (extracts base name from `filename`)
+2. Generates individual frames by calling `make_frames()`
+3. Compiles frames into a GIF by calling `write_gif()`
+4. Resets the graph state by calling `init_graph()`
+
+**Implementation:**
+
+```python
+@classmethod
+def make_animation(cls, filename="out.gif", delay=3):
+    print("Starting to make animation")
+    
+    # Save final tree as PNG
+    try:
+        cls.write_image(f"{filename.split('.')[0]}.png")
+    except:
+        print("Error saving image.")
+    
+    # Generate frames
+    try:
+        cls.make_frames()
+    except:
+        print("Error writing frames")
+    
+    # Create GIF from frames
+    try:
+        cls.write_gif(filename, delay=delay)
+    except:
+        print("Error saving gif.")
+    
+    # Reset graph for next use
+    cls.init_graph()
+```
+
+**Usage:**
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs()
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n=n - 1) + fibonacci(n=n - 2)
+
+fibonacci(n=5)
+vs.make_animation("fibonacci.gif", delay=2)
+```
+
+**Output:**
+```
+Starting to make animation
+File fibonacci.png successfully written
+Writing frames....
+Writing gif...
+Saved gif fibonacci.gif successfully
+```
+
+**Generated files:**
+- `fibonacci.png` - Static image of the complete recursion tree
+- `fibonacci.gif` - Animated GIF showing tree construction
+
+<Note>
+  This is the recommended high-level method for generating visualizations. It handles the complete workflow and cleanup automatically.
+</Note>
+
+<Warning>
+  The method calls `init_graph()` at the end, which resets all graph data. If you need to access the graph after calling this method, you'll need to rebuild it.
+</Warning>
+
+## Method call sequence
+
+Typical workflow for creating a visualization:
+
+```python
+# 1. Import and decorate function
+from visualiser.visualiser import Visualiser as vs
+
+@vs()
+def my_recursive_function(n):
+    # ... implementation ...
+    pass
+
+# 2. Call the decorated function
+my_recursive_function(n=5)
+
+# 3. Generate output (choose one):
+
+# Option A: Just save static image
+vs.write_image("output.png")
+
+# Option B: Create animation manually
+vs.make_frames()
+vs.write_gif("output.gif", delay=2)
+
+# Option C: Complete workflow (recommended)
+vs.make_animation("output.gif", delay=2)
+```
+
+## Error handling
+
+All export methods include basic exception handling:
+
+- Errors are caught and printed to stdout
+- No exceptions are raised, allowing the workflow to continue
+- Specific error messages indicate which step failed
+
+```python
+# If an error occurs during any step:
+# Output: "Error saving image." or "Error writing frames" or "Error saving gif."
+```
+
+<Warning>
+  The current implementation catches all exceptions silently. Check the console output for error messages if your output files are not generated.
+</Warning>

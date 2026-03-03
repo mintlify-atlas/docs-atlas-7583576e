@@ -1,0 +1,413 @@
+---
+title: Animation
+description: Create animated GIFs showing recursion execution step by step
+---
+
+The Recursion Tree Visualiser can generate animated GIFs that show how the recursion tree is built during execution. This is particularly useful for educational purposes and understanding recursive algorithm behavior.
+
+## Creating animations
+
+The primary method for creating animations is `make_animation()`, which generates both a static PNG and an animated GIF.
+
+### Basic usage
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs()
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n=n - 1) + fib(n=n - 2)
+
+def main():
+    print(fib(n=6))
+    # Generate animation and static image
+    vs.make_animation("fibonacci.gif", delay=2)
+
+if __name__ == "__main__":
+    main()
+```
+
+This creates two files:
+- `fibonacci.gif` - Animated visualization showing the tree being built
+- `fibonacci.png` - Static image of the complete recursion tree
+
+## Animation methods
+
+The Visualiser class provides three class methods for generating output:
+
+### `make_animation()`
+
+Generates both an animated GIF and a static PNG image.
+
+```python
+vs.make_animation(filename="out.gif", delay=3)
+```
+
+<ParamField path="filename" type="string" default="out.gif">
+  The name of the output GIF file. The PNG file will use the same base name.
+  
+  ```python
+  # Creates fibonacci.gif and fibonacci.png
+  vs.make_animation("fibonacci.gif", delay=2)
+  ```
+</ParamField>
+
+<ParamField path="delay" type="int" default="3">
+  The frame rate for the animation, specified as frames per second (fps).
+  
+  - Lower values (1-2) = slower animation
+  - Medium values (3-5) = moderate speed
+  - Higher values (6+) = faster animation
+  
+  ```python
+  # Slow animation: 2 frames per second
+  vs.make_animation("slow.gif", delay=2)
+  
+  # Fast animation: 5 frames per second
+  vs.make_animation("fast.gif", delay=5)
+  ```
+</ParamField>
+
+<Note>
+  The `delay` parameter is passed to `imageio.mimsave()` as the `fps` parameter, controlling animation speed.
+</Note>
+
+### `write_image()`
+
+Generates only a static PNG image of the complete recursion tree.
+
+```python
+vs.write_image(filename="out.png")
+```
+
+<ParamField path="filename" type="string" default="out.png">
+  The name of the output PNG file.
+  
+  ```python
+  vs.write_image("factorial.png")
+  ```
+</ParamField>
+
+**Example usage:**
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs()
+def factorial(n):
+    if n <= 1:
+        return 1
+    return n * factorial(n=n - 1)
+
+def main():
+    print(factorial(n=6))
+    vs.write_image("factorial.png")
+
+if __name__ == "__main__":
+    main()
+```
+
+### `write_gif()`
+
+Generates only an animated GIF. This is typically called internally by `make_animation()`, but can be used directly if you've already generated frames.
+
+```python
+vs.write_gif(name="out.gif", delay=3)
+```
+
+<ParamField path="name" type="string" default="out.gif">
+  The name of the output GIF file.
+</ParamField>
+
+<ParamField path="delay" type="int" default="3">
+  The frame rate (frames per second) for the animation.
+</ParamField>
+
+<Warning>
+  `write_gif()` requires frames to be generated first using `make_frames()`. In most cases, use `make_animation()` instead, which handles the complete workflow.
+</Warning>
+
+## How animations work
+
+The animation generation process involves several steps:
+
+<Steps>
+  <Step title="Recursion tree construction">
+    As your decorated function executes, the visualiser tracks every function call and builds an internal representation of the recursion tree.
+  </Step>
+  
+  <Step title="Frame generation">
+    The `make_frames()` method creates individual PNG images for each step of the recursion, stored in a temporary `frames/` directory.
+    
+    Each frame shows the tree at a specific point during execution, with completed nodes fully visible and pending nodes invisible.
+  </Step>
+  
+  <Step title="GIF compilation">
+    The individual frames are combined into an animated GIF using the `imageio` library, with the specified frame rate.
+  </Step>
+  
+  <Step title="Cleanup">
+    The temporary `frames/` directory is automatically deleted after the GIF is created.
+  </Step>
+</Steps>
+
+## Animation examples
+
+### Example 1: Fibonacci with custom styling
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs(node_properties_kwargs={
+    "shape": "record",
+    "color": "#f57542",
+    "style": "filled",
+    "fillcolor": "grey"
+})
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n=n - 1) + fib(n=n - 2)
+
+def main():
+    print(fib(n=6))
+    # Create animation with 2 fps
+    vs.make_animation("fibonacci.gif", delay=2)
+
+if __name__ == "__main__":
+    main()
+```
+
+### Example 2: Factorial with slow animation
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs()
+def factorial(n):
+    if n <= 1:
+        return n
+    return n * factorial(n=n - 1)
+
+def main():
+    print(factorial(n=6))
+    # Slower animation for educational purposes
+    vs.make_animation("factorial.gif", delay=2)
+
+if __name__ == "__main__":
+    main()
+```
+
+### Example 3: String combinations
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+result = []
+
+@vs(
+    show_argument_name=False,
+    node_properties_kwargs={
+        "shape": "record",
+        "color": "#f57542",
+        "style": "filled",
+        "fillcolor": "grey"
+    }
+)
+def combinations(prefix, s):
+    if len(s) == 0:
+        result.append(prefix)
+        return prefix
+    combinations(prefix=prefix + s[0], s=s[1:])
+    combinations(prefix=prefix, s=s[1:])
+    return result
+
+combinations(prefix="", s='abc')
+vs.make_animation("combinations.gif", delay=3)
+```
+
+### Example 4: Coin change problem
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs(ignore_args=["coins"], show_argument_name=False)
+def coin_change(coins, amount, n):
+    if amount == 0:
+        return 1
+    if amount < 0:
+        return 0
+    if n <= 0 and amount >= 1:
+        return 0
+    
+    include = coin_change(coins=coins, amount=amount - coins[n-1], n=n)
+    exclude = coin_change(coins=coins, amount=amount, n=n - 1)
+    
+    return include + exclude
+
+def main():
+    amount = 5
+    coins = [1, 2, 5]
+    print(coin_change(coins=coins, amount=amount, n=len(coins)))
+    vs.make_animation("coin_change.gif", delay=3)
+
+if __name__ == "__main__":
+    main()
+```
+
+## Choosing the right output method
+
+<Tabs>
+  <Tab title="Use make_animation() when...">
+    - You want to show the recursion process step by step
+    - Creating educational content
+    - Demonstrating algorithm behavior
+    - You need both static and animated outputs
+    
+    ```python
+    vs.make_animation("output.gif", delay=3)
+    # Creates: output.gif + output.png
+    ```
+  </Tab>
+  
+  <Tab title="Use write_image() when...">
+    - You only need the final recursion tree
+    - File size is a concern (PNGs are smaller)
+    - Embedding in documentation or papers
+    - Quick debugging of recursion structure
+    
+    ```python
+    vs.write_image("output.png")
+    # Creates: output.png only
+    ```
+  </Tab>
+</Tabs>
+
+## Performance considerations
+
+Animations can take significant time and disk space for deep recursion trees:
+
+### Frame generation
+
+Each frame is a separate PNG image. For a function with N recursive calls, N frames will be generated.
+
+```python
+# fib(10) generates ~177 frames
+# fib(15) generates ~1973 frames
+# Consider your input size!
+```
+
+<Warning>
+  Large recursion trees (e.g., `fib(n=20)`) can generate thousands of frames, requiring significant disk space and processing time.
+</Warning>
+
+### Optimization tips
+
+<Steps>
+  <Step title="Test with small inputs first">
+    Start with small input values to verify your visualization settings before generating large animations.
+    
+    ```python
+    # Test first
+    fib(n=6)  # ~25 frames
+    
+    # Then scale up if needed
+    fib(n=10)  # ~177 frames
+    ```
+  </Step>
+  
+  <Step title="Use write_image() for large inputs">
+    If you have a deep recursion tree but don't need animation, use `write_image()` to save time and space.
+  </Step>
+  
+  <Step title="Adjust delay for file size">
+    Higher delay values (faster animations) result in smaller GIF files since fewer duplicate frames are perceived.
+  </Step>
+  
+  <Step title="Clean up temporary files">
+    The `frames/` directory is automatically deleted, but if the process is interrupted, manually remove it to free disk space.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Animation not created
+
+**Error message:** `"Error writing frames"` or `"Error saving gif"`
+
+**Solutions:**
+- Ensure you have write permissions in the current directory
+- Check that graphviz is properly installed
+- Verify that the `imageio` package is installed
+- Try with a smaller input to rule out memory issues
+
+### Frames directory not deleted
+
+If the `frames/` directory persists after generation:
+
+```python
+import shutil
+
+# Manually clean up
+shutil.rmtree("frames")
+```
+
+### GIF plays too fast or too slow
+
+Adjust the `delay` parameter:
+
+```python
+# Too fast? Decrease delay
+vs.make_animation("output.gif", delay=1)  # Slower
+
+# Too slow? Increase delay
+vs.make_animation("output.gif", delay=5)  # Faster
+```
+
+<Info>
+  The `delay` parameter controls frames per second (fps). Higher values = faster playback.
+</Info>
+
+## Complete workflow example
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs(node_properties_kwargs={
+    "shape": "record",
+    "color": "#f57542",
+    "style": "filled",
+    "fillcolor": "grey"
+})
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n=n - 1) + fib(n=n - 2)
+
+def main():
+    # Execute the recursive function
+    result = fib(n=6)
+    print(f"Result: {result}")
+    
+    # Generate animation (creates .gif and .png)
+    vs.make_animation("fibonacci.gif", delay=2)
+    print("Animation saved to fibonacci.gif")
+    print("Static image saved to fibonacci.png")
+
+if __name__ == "__main__":
+    main()
+```
+
+Expected output:
+```
+Drawing for fib(1)
+Result: 8
+File fibonacci.png successfully written
+Writing frames....
+Writing gif...
+Saved gif fibonacci.gif successfully
+Animation saved to fibonacci.gif
+Static image saved to fibonacci.png
+```

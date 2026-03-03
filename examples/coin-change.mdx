@@ -1,0 +1,84 @@
+---
+title: Coin change problem
+description: Visualize the recursive solution to the coin change problem
+---
+
+The coin change problem asks: "How many ways can you make change for a given amount using a set of coin denominations?" This classic dynamic programming problem demonstrates the power of recursion visualization.
+
+## Example code
+
+This example shows how to count the number of ways to make change:
+
+```python
+# Author: Bishal Sarang
+from visualiser.visualiser import  Visualiser as vs
+
+"""
+    Number of ways to make change:
+"""
+@vs(ignore_args=["coins"], show_argument_name=False)
+def f(coins, amount, n):
+    if amount == 0:
+        return 1
+
+    if amount < 0:
+        return 0
+
+    if n <= 0 and amount >= 1:
+        return 0
+
+    include = f(coins=coins, amount=amount - coins[n - 1], n=n)
+    exclude = f(coins=coins, amount=amount, n=n-1)
+
+    return include + exclude
+
+def main():
+    amount = 5
+    coins = [1, 2, 5]
+    print(f(coins=coins, amount=amount, n=len(coins)))
+    vs.make_animation("coin_change.gif", delay=3)
+
+if __name__ == "__main__":
+    main()
+```
+
+## How it works
+
+The recursive solution uses the **include/exclude** pattern:
+
+1. **Base cases**:
+   - If `amount == 0`: One way to make change (use no coins)
+   - If `amount < 0`: No valid way
+   - If no coins left but amount remains: No valid way
+
+2. **Recursive cases**:
+   - **Include**: Use the current coin, subtract its value from amount
+   - **Exclude**: Don't use the current coin, move to next coin
+   - Return the sum of both possibilities
+
+<Note>
+For amount=5 and coins=[1, 2, 5], there are 4 ways to make change:
+- 5 (one 5-cent coin)
+- 2 + 2 + 1 (two 2-cent coins and one 1-cent coin)
+- 2 + 1 + 1 + 1 (one 2-cent coin and three 1-cent coins)
+- 1 + 1 + 1 + 1 + 1 (five 1-cent coins)
+</Note>
+
+## Decorator configuration
+
+The `@vs` decorator is configured to improve visualization:
+
+- `ignore_args=["coins"]`: Hides the coins array from tree nodes (since it doesn't change)
+- `show_argument_name=False`: Shows only values without parameter names for cleaner nodes
+
+This keeps the visualization focused on the changing parameters (`amount` and `n`).
+
+## Output
+
+Running this code generates:
+- **Console output**: `4` (the number of ways to make 5 cents)
+- **Animation file**: `coin_change.gif` showing the complete recursion tree with a 3-second delay between frames
+
+<Tip>
+The coin change problem exhibits overlapping subproblems similar to Fibonacci. In the recursion tree, you'll see the same (amount, n) pairs computed multiple times - this is where memoization or dynamic programming would help optimize the solution.
+</Tip>

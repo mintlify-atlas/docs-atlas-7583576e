@@ -1,0 +1,378 @@
+---
+title: Customization
+description: Customize the appearance of recursion tree nodes and labels
+---
+
+The Recursion Tree Visualiser provides extensive customization options to control how your recursion trees are displayed. You can customize node appearance, control label formatting, and filter displayed arguments.
+
+## Node appearance customization
+
+The `node_properties_kwargs` parameter accepts a dictionary of Graphviz node attributes that control visual styling.
+
+### Basic styling
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs(node_properties_kwargs={
+    "shape": "record",
+    "color": "#f57542",
+    "style": "filled",
+    "fillcolor": "grey"
+})
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n=n - 1) + fib(n=n - 2)
+```
+
+This example creates nodes with a record shape, orange border, and grey fill.
+
+### Common node properties
+
+<ParamField path="shape" type="string" default="ellipse">
+  The shape of the node. Common values:
+  - `"ellipse"` - Default oval shape
+  - `"box"` - Rectangle
+  - `"record"` - Rectangle with optional subdivisions (works well with return values)
+  - `"circle"` - Perfect circle
+  - `"diamond"` - Diamond shape
+  - `"plaintext"` - No border, just text
+
+  ```python
+  @vs(node_properties_kwargs={"shape": "box"})
+  def example(n):
+      pass
+  ```
+</ParamField>
+
+<ParamField path="color" type="string" default="black">
+  The border color of the node. Accepts hex codes or named colors.
+
+  ```python
+  @vs(node_properties_kwargs={"color": "#f57542"})
+  def example(n):
+      pass
+  ```
+</ParamField>
+
+<ParamField path="style" type="string" default="solid">
+  The style of the node. Common values:
+  - `"filled"` - Filled with fillcolor
+  - `"solid"` - Solid border (default)
+  - `"dashed"` - Dashed border
+  - `"dotted"` - Dotted border
+  - `"bold"` - Bold border
+  - `"rounded"` - Rounded corners (for box shape)
+
+  ```python
+  @vs(node_properties_kwargs={
+      "style": "filled",
+      "fillcolor": "lightblue"
+  })
+  def example(n):
+      pass
+  ```
+</ParamField>
+
+<ParamField path="fillcolor" type="string" default="transparent">
+  The fill color when `style="filled"`. Accepts hex codes or named colors.
+
+  ```python
+  @vs(node_properties_kwargs={
+      "style": "filled",
+      "fillcolor": "#ccffcc"
+  })
+  def example(n):
+      pass
+  ```
+</ParamField>
+
+## Label customization
+
+Control what information appears in node labels using the decorator parameters.
+
+### Show or hide argument names
+
+The `show_argument_name` parameter controls whether parameter names are displayed:
+
+<Tabs>
+  <Tab title="With argument names (default)">
+    ```python
+    @vs(show_argument_name=True)
+    def fib(n):
+        if n <= 1:
+            return n
+        return fib(n=n - 1) + fib(n=n - 2)
+    
+    fib(n=5)
+    ```
+    
+    Node labels will show: `fib(n=5)`, `fib(n=4)`, etc.
+  </Tab>
+  
+  <Tab title="Without argument names">
+    ```python
+    @vs(show_argument_name=False)
+    def fib(n):
+        if n <= 1:
+            return n
+        return fib(n=n - 1) + fib(n=n - 2)
+    
+    fib(n=5)
+    ```
+    
+    Node labels will show: `fib(5)`, `fib(4)`, etc.
+  </Tab>
+</Tabs>
+
+<Tip>
+  Use `show_argument_name=False` for cleaner labels when function names and values alone are self-explanatory.
+</Tip>
+
+### Show or hide return values
+
+The `show_return_value` parameter controls whether function return values are displayed on nodes:
+
+<Tabs>
+  <Tab title="With return values (default)">
+    ```python
+    @vs(show_return_value=True)
+    def factorial(n):
+        if n <= 1:
+            return 1
+        return n * factorial(n=n - 1)
+    
+    factorial(n=5)
+    ```
+    
+    Node labels will show:
+    ```
+    factorial(n=5)
+     => 120
+    ```
+  </Tab>
+  
+  <Tab title="Without return values">
+    ```python
+    @vs(show_return_value=False)
+    def factorial(n):
+        if n <= 1:
+            return 1
+        return n * factorial(n=n - 1)
+    
+    factorial(n=5)
+    ```
+    
+    Node labels will show only: `factorial(n=5)`
+  </Tab>
+</Tabs>
+
+### Record shape with return values
+
+When using `shape="record"`, return values are displayed in a separate row:
+
+```python
+@vs(
+    show_return_value=True,
+    node_properties_kwargs={"shape": "record"}
+)
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n=n - 1) + fib(n=n - 2)
+```
+
+This creates a two-row display:
+```
+┌─────────┐
+│ fib(n=5)│
+├─────────┤
+│    5    │
+└─────────┘
+```
+
+<Note>
+  The record shape is particularly useful for clearly separating function calls from their return values.
+</Note>
+
+## Ignoring arguments
+
+The `ignore_args` parameter allows you to hide specific arguments from node labels. This is useful when certain parameters are constant or clutter the visualization.
+
+### Basic usage
+
+```python
+@vs(ignore_args=["coins"])
+def coin_change(coins, amount, n):
+    if amount == 0:
+        return 1
+    if amount < 0 or n <= 0:
+        return 0
+    
+    include = coin_change(coins=coins, amount=amount - coins[n-1], n=n)
+    exclude = coin_change(coins=coins, amount=amount, n=n - 1)
+    return include + exclude
+
+# Only 'amount' and 'n' will appear in node labels
+coin_change(coins=[1, 2, 5], amount=5, n=3)
+```
+
+Node labels will show: `coin_change(amount=5, n=3)` instead of `coin_change(coins=[1, 2, 5], amount=5, n=3)`
+
+### Multiple ignored arguments
+
+```python
+@vs(ignore_args=["context", "cache", "visited"])
+def graph_search(node, target, context, cache, visited):
+    # Implementation
+    pass
+```
+
+<Warning>
+  The internal `node_num` parameter is always ignored automatically. You don't need to include it in `ignore_args`.
+</Warning>
+
+### Combining with other options
+
+```python
+@vs(
+    ignore_args=["coins"],
+    show_argument_name=False,
+    show_return_value=True
+)
+def coin_change(coins, amount, n):
+    if amount == 0:
+        return 1
+    if amount < 0 or n <= 0:
+        return 0
+    
+    include = coin_change(coins=coins, amount=amount - coins[n-1], n=n)
+    exclude = coin_change(coins=coins, amount=amount, n=n - 1)
+    return include + exclude
+```
+
+Node labels will show: `coin_change(5, 3) => 4` (clean and compact)
+
+## Complete customization examples
+
+### Example 1: Fibonacci with styled nodes
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs(node_properties_kwargs={
+    "shape": "record",
+    "color": "#f57542",
+    "style": "filled",
+    "fillcolor": "grey"
+})
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n=n - 1) + fib(n=n - 2)
+
+def main():
+    print(fib(n=6))
+    vs.make_animation("fibonacci.gif", delay=2)
+
+if __name__ == "__main__":
+    main()
+```
+
+### Example 2: Combinations with minimal labels
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+result = []
+
+@vs(
+    show_argument_name=False,
+    node_properties_kwargs={
+        "shape": "record",
+        "color": "#f57542",
+        "style": "filled",
+        "fillcolor": "grey"
+    }
+)
+def combinations(prefix, s):
+    if len(s) == 0:
+        result.append(prefix)
+        return prefix
+    combinations(prefix=prefix + s[0], s=s[1:])
+    combinations(prefix=prefix, s=s[1:])
+    return result
+
+print(combinations(prefix="", s='abc'))
+vs.make_animation("combinations.gif", delay=3)
+```
+
+### Example 3: Clean display without clutter
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs(
+    ignore_args=["node_num"],
+    show_argument_name=False,
+    show_return_value=False
+)
+def make_sum(sum_remaining, answer):
+    if sum_remaining == 0:
+        print(answer)
+        return
+    
+    for elem in [2, 3, 7]:
+        if sum_remaining - elem >= 0:
+            make_sum(
+                sum_remaining=sum_remaining - elem,
+                answer=answer + [elem]
+            )
+
+make_sum(sum_remaining=10, answer=[])
+vs.write_image("make_sum.png")
+```
+
+## Available Graphviz attributes
+
+You can use any valid Graphviz node attribute in `node_properties_kwargs`. Here are some commonly used ones:
+
+| Attribute | Description | Example Values |
+|-----------|-------------|----------------|
+| `shape` | Node shape | `"ellipse"`, `"box"`, `"record"`, `"circle"`, `"diamond"` |
+| `color` | Border color | `"red"`, `"#f57542"` |
+| `fillcolor` | Fill color (requires `style="filled"`) | `"lightblue"`, `"#ccffcc"` |
+| `style` | Node style | `"filled"`, `"solid"`, `"dashed"`, `"bold"`, `"rounded"` |
+| `fontname` | Font family | `"Helvetica"`, `"Arial"`, `"Courier"` |
+| `fontsize` | Font size in points | `"12"`, `"14"`, `"16"` |
+| `fontcolor` | Text color | `"black"`, `"white"`, `"#333333"` |
+| `penwidth` | Border width | `"1.0"`, `"2.5"` |
+
+<Info>
+  For a complete list of Graphviz node attributes, see the [Graphviz documentation](https://graphviz.org/doc/info/attrs.html).
+</Info>
+
+## Tips for effective visualizations
+
+<Steps>
+  <Step title="Start with defaults">
+    Begin with `@vs()` and only add customization when needed.
+  </Step>
+  
+  <Step title="Use record shape for clarity">
+    The `"record"` shape works particularly well with `show_return_value=True`, creating a clear visual separation.
+  </Step>
+  
+  <Step title="Hide verbose arguments">
+    Use `ignore_args` to hide large data structures or constant parameters that clutter the display.
+  </Step>
+  
+  <Step title="Choose colors wisely">
+    Use contrasting colors for borders and fills. Light fill colors with dark borders often work well.
+  </Step>
+  
+  <Step title="Test with small inputs">
+    When experimenting with styling, test with small input values (like `fib(n=5)`) to avoid generating huge trees.
+  </Step>
+</Steps>

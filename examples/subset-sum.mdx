@@ -1,0 +1,90 @@
+---
+title: Subset sum problem
+description: Visualize generating all subsets of a given set
+---
+
+The subset sum problem demonstrates how to generate all possible subsets of a given array using recursion. This example shows the classic "include/exclude" decision pattern for each element.
+
+## Example code
+
+This example generates all subsets of an array:
+
+```python
+# Author: Bishal Sarang
+
+# Import Visualiser class from module visualiser
+from visualiser.visualiser import Visualiser as vs
+
+"""
+    Given an array of numbers, find all the subsets:
+    eg: nums = [1, 2, 3]
+    Output:
+        [[], [1], [2], [2, 1], [3], [3, 1], [3, 2], [3, 2 , 1]]
+    You can find my explanation here: https://qr.ae/TWHmsi 
+"""
+
+subsets = []
+@vs(ignore_args=["nums"], show_return_value=False, show_argument_name=False)
+def f(nums, i, current_subset):
+    # If no more elements left
+    if i == 0:
+        subsets.append(current_subset)
+        return
+    # Exclude Current element
+    f(nums=nums, i=i - 1, current_subset=current_subset)
+
+    # Include current element
+    f(nums=nums, i=i - 1, current_subset=current_subset + [nums[i - 1]])
+
+if __name__ == "__main__":
+    nums = [1, 2, 3]
+    f(nums=nums, i = len(nums), current_subset=[])
+    # Save recursion tree to a file
+    vs.make_animation("subset.gif", delay=3)
+```
+
+## How it works
+
+The subset generation algorithm works by making a binary decision for each element:
+
+1. **Base case**: When `i == 0`, all elements have been considered - add the current subset to results
+2. **Recursive cases**: For each element at position `i-1`:
+   - **Exclude**: Continue without adding the element
+   - **Include**: Add the element to current_subset and continue
+
+This creates a binary tree where:
+- Left branches represent excluding the current element
+- Right branches represent including the current element
+
+<Note>
+For an array of size n, this algorithm generates 2^n subsets. The recursion tree has 2^n leaf nodes, each representing one unique subset.
+</Note>
+
+## Decorator configuration
+
+The `@vs` decorator is configured for optimal visualization:
+
+- `ignore_args=["nums"]`: Hides the input array since it remains constant
+- `show_return_value=False`: Hides return values (function returns None)
+- `show_argument_name=False`: Shows only values for cleaner nodes
+
+This configuration keeps the tree focused on the index `i` and the growing `current_subset`.
+
+## Output
+
+Running this code with `nums=[1, 2, 3]` generates:
+- **Console output**: None (subsets are stored in the global `subsets` list)
+- **Subsets generated**: `[[], [1], [2], [2, 1], [3], [3, 1], [3, 2], [3, 2, 1]]`
+- **Animation file**: `subset.gif` showing the binary decision tree with a 3-second delay between frames
+
+<Tip>
+The subset generation pattern is fundamental to many backtracking problems. Understanding this tree structure helps you tackle problems like combinations, permutations, and the knapsack problem.
+</Tip>
+
+## Visualization insights
+
+In the recursion tree, you can observe:
+- The tree depth equals the number of elements in the input array
+- Each level represents a decision about one element
+- The path from root to leaf represents which elements to include (right branches) or exclude (left branches)
+- All 2^n possible combinations are explored

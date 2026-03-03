@@ -1,0 +1,117 @@
+---
+title: Recursion Tree Visualiser
+description: A Python decorator library that visualizes recursion trees with animations
+---
+
+<img
+  className="block dark:hidden"
+  src="https://raw.githubusercontent.com/Bishalsarang/Recursion-Tree-Visualizer/master/examples/fibonacci.gif"
+  alt="Fibonacci recursion tree animation"
+/>
+<img
+  className="hidden dark:block"
+  src="https://raw.githubusercontent.com/Bishalsarang/Recursion-Tree-Visualizer/master/examples/fibonacci.gif"
+  alt="Fibonacci recursion tree animation"
+/>
+
+## Overview
+
+Recursion Tree Visualiser is a Python decorator library that automatically generates visual representations of recursive function calls. Simply add the `@Visualiser` decorator to your recursive function and watch your recursion tree come to life with animations.
+
+The library works with almost any type of recursive function, from simple examples like Fibonacci and factorial to complex algorithms like dynamic programming solutions.
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card
+    title="Zero-code visualization"
+    icon="wand-magic-sparkles"
+  >
+    Add a single decorator to your function - no code changes required
+  </Card>
+  <Card
+    title="Animated recursion trees"
+    icon="film"
+  >
+    Generate GIF animations showing how recursion unfolds step-by-step
+  </Card>
+  <Card
+    title="Highly customizable"
+    icon="palette"
+  >
+    Control node colors, shapes, labels, and return value display
+  </Card>
+  <Card
+    title="Works everywhere"
+    icon="code"
+  >
+    Compatible with any recursive function - Fibonacci, factorial, dynamic programming, and more
+  </Card>
+</CardGroup>
+
+## Quick example
+
+Here's how easy it is to visualize a Fibonacci function:
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+@vs()
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n=n - 1) + fib(n=n - 2)
+
+print(fib(n=6))
+vs.make_animation("fibonacci.gif", delay=2)
+```
+
+This generates both a static PNG image and an animated GIF showing the complete recursion tree.
+
+## Get started
+
+<CardGroup cols={2}>
+  <Card
+    title="Installation"
+    icon="download"
+    href="/installation"
+  >
+    Install graphviz and the recursion-visualiser package
+  </Card>
+  <Card
+    title="Quickstart"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Create your first recursion tree in under 5 minutes
+  </Card>
+  <Card
+    title="Examples"
+    icon="lightbulb"
+    href="/examples/fibonacci"
+  >
+    Explore visualization examples for different recursive algorithms
+  </Card>
+  <Card
+    title="API reference"
+    icon="book"
+    href="/api/visualiser-decorator"
+  >
+    Complete reference for all decorator options and methods
+  </Card>
+</CardGroup>
+
+## What you'll learn
+
+This documentation will guide you through:
+
+- Installing graphviz and the Python package on different platforms
+- Adding the visualizer decorator to your recursive functions
+- Customizing node appearance with colors, shapes, and styles
+- Generating static images and animated GIFs
+- Controlling what information appears in the tree (arguments, return values)
+- Troubleshooting common issues
+
+## Python version support
+
+Recursion Tree Visualiser requires Python 3.6 or higher.

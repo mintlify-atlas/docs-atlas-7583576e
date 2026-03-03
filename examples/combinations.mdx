@@ -1,0 +1,81 @@
+---
+title: Combinations
+description: Visualize generating all combinations of characters in a string
+---
+
+This example demonstrates how to generate all possible combinations (or subsequences) of characters in a string using recursion. It's similar to the subset problem but works with string prefixes.
+
+## Example code
+
+This example generates all combinations of characters from a string:
+
+```python
+from visualiser.visualiser import Visualiser as vs
+
+st= []
+@vs(show_argument_name=False, node_properties_kwargs={"shape":"record", "color":"#f57542", "style":"filled", "fillcolor":"grey"})
+def combi(prefix, s):
+    if len(s) == 0:
+        return " "
+    else:
+        st.append(prefix + s[0])
+        combi(prefix=prefix + s[0], s=s[1:])
+        combi(prefix=prefix, s=s[1:])
+        return st
+
+print(combi(prefix="",s='abc'))
+vs.make_animation("combinations.gif", delay=3)
+```
+
+## How it works
+
+The combinations function uses a prefix-based approach:
+
+1. **Base case**: When the string `s` is empty, return (all characters have been processed)
+2. **Recursive cases**: For the first character in `s`:
+   - **Include**: Add `s[0]` to the prefix and recurse with the remaining string
+   - **Exclude**: Keep the prefix unchanged and recurse with the remaining string
+3. Each valid combination (when including a character) is added to the result list `st`
+
+<Note>
+For a string of length n, this generates 2^n - 1 non-empty combinations. The recursion tree structure mirrors the subset problem but operates on string characters.
+</Note>
+
+## Decorator configuration
+
+The `@vs` decorator is configured with:
+
+- `show_argument_name=False`: Shows only values without parameter names
+- `node_properties_kwargs`: Custom styling for visual appeal
+  - `shape="record"`: Record-based node shape
+  - `color="#f57542"`: Orange border color
+  - `style="filled"`: Filled nodes
+  - `fillcolor="grey"`: Grey fill color
+
+## Output
+
+Running this code with `s='abc'` generates:
+- **Console output**: List of combinations including `['a', 'ab', 'abc', 'ac', 'b', 'bc', 'c']`
+- **Animation file**: `combinations.gif` showing the recursion tree with a 3-second delay between frames
+
+## Recursion pattern
+
+The algorithm explores combinations by:
+- Building up prefixes character by character
+- At each step, deciding whether to include or exclude the current character
+- Creating a binary tree where paths represent different character selections
+
+<Tip>
+This pattern is useful for generating:
+- All subsequences of a string
+- String combinations for pattern matching
+- Exploring search spaces in backtracking problems
+</Tip>
+
+## Visualization insights
+
+In the recursion tree:
+- Each node shows the current `prefix` and remaining string `s`
+- Left branches typically represent including the first character
+- Right branches represent excluding it
+- The tree depth equals the length of the input string
