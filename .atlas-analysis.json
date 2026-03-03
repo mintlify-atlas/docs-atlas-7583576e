@@ -1,0 +1,67 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Recursion Tree Visualiser",
+  "projectDescription": "A Python decorator library that visualizes recursion trees with animations for any recursive function.",
+  "theme": "palm",
+  "primaryColor": "#f57542",
+  "lightColor": "#fff3af",
+  "darkColor": "#2d3748",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "installation",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/basic-usage",
+          "guides/customization",
+          "guides/animation",
+          "guides/docker"
+        ]
+      },
+      {
+        "group": "Examples",
+        "pages": [
+          "examples/fibonacci",
+          "examples/factorial",
+          "examples/coin-change",
+          "examples/subset-sum",
+          "examples/combinations",
+          "examples/advanced"
+        ]
+      },
+      {
+        "group": "API Reference",
+        "pages": [
+          "api/visualiser-decorator",
+          "api/configuration",
+          "api/methods"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Simple decorator-based API for visualizing recursive functions",
+    "Automatic recursion tree generation with graphviz",
+    "Animated GIF output showing step-by-step execution",
+    "Customizable node styling (shape, color, fillcolor)",
+    "Support for keyword arguments and return value display",
+    "Works with any recursive function in Python"
+  ],
+  "publicApiSurface": [
+    "@Visualiser decorator",
+    "Visualiser.make_animation(filename, delay)",
+    "Visualiser.write_image(filename)",
+    "Visualiser.init_graph()",
+    "ignore_args parameter",
+    "show_argument_name parameter",
+    "show_return_value parameter",
+    "node_properties_kwargs parameter"
+  ]
+}
